@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "apple-wallet"
+version = "0.1.0"
+description = "A simple library to create Apple passes compatible with Wallet"
+authors = ["Borja Toron-Antons <borja.toron@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+keywords = ["apple pass", "apple wallet"]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.9",
+    "Operating System :: OS Independent"
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic = "^2.9.2"
+pydantic-settings = "^2.5.2"
+cryptography = "^43.0.1"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
