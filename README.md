@@ -28,4 +28,8 @@ This library is heavily based on the examples and code provided in:
 [2] https://github.com/alexandercerutti/passkit-generator (Excellent ideas that I try to replicate in Python)
 
 ### More about Apple Pass ###
-[3] Reference
+[3] Reference: Human Interface: https://developer.apple.com/design/human-interface-guidelines/wallet
+
+[4] Reference: PassKit: https://developer.apple.com/wallet/
+
+[5] Reference: PassKit Package Format Reference: https://developer.apple.com/library/archive/documentation/UserExperience/Reference/PassKit_Bundle/Chapters/Introduction.html
