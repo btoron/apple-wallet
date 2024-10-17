@@ -1,4 +1,3 @@
-from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
@@ -7,7 +6,9 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    model_config = ConfigDict(env_file=".env", env_prefix="APPLE_WALLET_", frozen=True)
+    model_config = ConfigDict(
+        env_file=".env", env_prefix="APPLE_WALLET_", frozen=True, extra="ignore"
+    )
     template_path: Optional[str] = "templates"
     certificate_path: Optional[str] = "certificates"
 
