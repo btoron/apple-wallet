@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "apple-wallet"
-version = "0.1.0"
+version = "0.1.1"
 description = "A simple library to create Apple passes compatible with Wallet"
 authors = ["Borja Toron-Antons <borja.toron@gmail.com>"]
 readme = "README.md"
