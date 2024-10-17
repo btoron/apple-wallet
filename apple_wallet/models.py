@@ -7,7 +7,7 @@ from typing import Annotated, Optional
 
 from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, model_validator
 
-from .settings import Settings, get_settings
+from apple_wallet.settings import Settings, get_settings
 
 
 class PassFieldContent(BaseModel):

@@ -11,8 +11,8 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.serialization import pkcs7
 
-from .models import Pass
-from .settings import Settings, get_settings
+from apple_wallet.models import Pass
+from apple_wallet.settings import Settings, get_settings
 
 
 class PasskitService:
