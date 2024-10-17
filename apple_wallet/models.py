@@ -10,6 +10,22 @@ from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, model_validator
 from apple_wallet.settings import Settings, get_settings
 
 
+class FieldType(str, Enum):
+    PRIMARY = "primary"
+    SECONDARY = "secondary"
+    BACK = "back"
+    HEADER = "header"
+    AUXILIARY = "auxiliary"
+
+
+class PassStyle(str, Enum):
+    GENERIC = "generic"
+    BOARDING_PASS = "boardingPass"
+    COUPON = "coupon"
+    EVENT_TICKET = "eventTicket"
+    STORE_CARD = "storeCard"
+
+
 class PassFieldContent(BaseModel):
     attributedValue: Optional[str] = None
     changeMessage: Optional[str] = None
@@ -89,10 +105,10 @@ class Pass(BaseModel):
     backgroundColor: Optional[str] = None
     barcodes: Optional[list[Barcode]] = None
     beacons: Optional[list[dict]] = None
-    boardingPass: Optional[dict] = None
+    boardingPass: Optional[PassFields] = None
     coupon: Optional[dict] = None
     description: str
-    eventTicket: Optional[dict] = None
+    eventTicket: Optional[PassFields] = None
     expirationDate: Optional[str] = None
     foregroundColor: Optional[str] = None
     formatVersion: int = 1
@@ -109,36 +125,35 @@ class Pass(BaseModel):
     semantics: Optional[dict] = None
     serialNumber: str
     sharingProhibited: Optional[bool] = False
-    storeCard: Optional[dict] = None
+    storeCard: Optional[PassFields] = None
     suppressStripShine: Optional[bool] = True
     teamIdentifier: str
     userInfo: Optional[dict] = None
     voided: Optional[bool] = None
     webServiceURL: Optional[AnyHttpUrl] = None
+    # Internal fields
+    _style: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_pass(self):
-        # Either generic, boardingPass, coupon, eventTicket, or storeCard must be present
-        if not any(
-            [
-                self.generic,
-                self.boardingPass,
-                self.coupon,
-                self.eventTicket,
-                self.storeCard,
-            ]
-        ):
-            raise ValueError(
-                "Either generic, boardingPass, coupon, eventTicket, or storeCard must be present"
-            )
+        # Identify which type of pass it is by checking which one of the attributes is not None
+        self._style = next((p.value for p in PassStyle if getattr(self, p.value)), None)
+
+        if not self._style:
+            raise ValueError("Pass style not set")
+
         return self
+
+    @property
+    def style(self):
+        return self._style
 
     @classmethod
     def from_template(
-        cls, model: str, extra_data: dict = {}, settings: Settings = get_settings()
+        cls, template: str, extra_data: dict = {}, settings: Settings = get_settings()
     ):
         # Load a pass template from a json file in the model directory
-        json_file = Path(settings.template_path) / f"{model}.pass" / "pass.json"
+        json_file = Path(settings.template_path) / f"{template}.pass" / "pass.json"
         if not json_file.exists():
             raise FileNotFoundError(f"File {json_file} not found")
         with open(json_file, "r") as f:
@@ -147,8 +162,87 @@ class Pass(BaseModel):
         pass_dict.update(extra_data)
         # We store the template name in the userInfo field
         if pass_dict.get("userInfo"):
-            pass_dict["userInfo"]["_template"] = model
+            pass_dict["userInfo"]["_template"] = template
         else:
-            pass_dict["userInfo"] = {"_template": model}
+            pass_dict["userInfo"] = {"_template": template}
 
         return cls(**pass_dict)
+
+    def _get_field(self, key: str, field_type: FieldType) -> Optional[PassFieldContent]:
+        field_map = {
+            "primary": "primaryFields",
+            "secondary": "secondaryFields",
+            "back": "backFields",
+            "header": "headerFields",
+            "auxiliary": "auxiliaryFields",
+        }
+
+        field_attr = field_map.get(field_type)
+        if not field_attr:
+            return None
+
+        pass_fields = getattr(self, self.style, None)
+        if pass_fields:
+            fields = getattr(pass_fields, field_attr, None)
+            if fields:
+                for field in fields:
+                    if field.key == key:
+                        return field
+        return None
+
+    def get_primary_field(self, key: str) -> Optional[PrimaryField]:
+        return self._get_field(key, "primary")
+
+    def get_secondary_field(self, key: str) -> Optional[SecondaryField]:
+        return self._get_field(key, "secondary")
+
+    def get_back_field(self, key: str) -> Optional[BackField]:
+        return self._get_field(key, "back")
+
+    def get_header_field(self, key: str) -> Optional[HeaderField]:
+        return self._get_field(key, "header")
+
+    def get_auxiliary_field(self, key: str) -> Optional[AuxiliaryField]:
+        return self._get_field(key, "auxiliary")
+
+    def _set_field(self, field_type: FieldType, field: PassFieldContent) -> None:
+        field_map = {
+            "primary": "primaryFields",
+            "secondary": "secondaryFields",
+            "back": "backFields",
+            "header": "headerFields",
+            "auxiliary": "auxiliaryFields",
+        }
+
+        field_attr = field_map.get(field_type)
+        if not field_attr:
+            raise ValueError(f"Invalid field type {field_type}")
+
+        pass_fieldset = getattr(self, self.style, None)
+        if not pass_fieldset:
+            pass_fieldset = PassFields()
+            setattr(self, self.style, pass_fieldset)
+        fields = getattr(pass_fieldset, field_attr, None)
+        if not fields:
+            fields = []
+            setattr(pass_fieldset, field_attr, fields)
+        for i, f in enumerate(fields):
+            if f.key == field.key:
+                fields[i] = field
+                return
+        fields.append(field)
+
+    def set_primary_field(self, field: PrimaryField) -> None:
+        self._set_field("primary", field)
+
+    def set_secondary_field(self, field: SecondaryField) -> None:
+        self._set_field("secondary", field)
+
+    def set_back_field(self, field: BackField) -> None:
+        self._set_field("back", field)
+
+    def set_header_field(self, field: HeaderField) -> None:
+        self._set_field("header", field)
+
+    def set_auxiliary_field(self, field: AuxiliaryField) -> None:
+        self._set_field("auxiliary", field)

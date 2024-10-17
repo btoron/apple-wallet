@@ -43,3 +43,16 @@ def test_service_generate_modified_pass(test_settings):
     assert passfile.exists()
     # Move passfile to a different location
     shutil.move(passfile, "tests/data/pass.pkpass")
+
+
+def test_generate_pass_from_info(test_settings):
+    pass_info = PasskitService.get(
+        settings=Settings(template_path="tests/data")
+    ).create_pass_info("example")
+    assert pass_info is not None
+    assert pass_info.passTypeIdentifier == test_settings.passId
+    passfile = PasskitService.get(
+        settings=Settings(template_path="tests/data")
+    ).generate_pass_from_info(pass_info)
+    assert passfile.exists()
+    shutil.move(passfile, "tests/data/pass.pkpass")
