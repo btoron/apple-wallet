@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import json
 import shutil
@@ -20,17 +22,18 @@ class PasskitService:
         my_pass = Pass.from_template(
             template=template, extra_data=extra_data, settings=self._settings
         )
+        my_pass.userInfo = {"_template": template}
         return my_pass
 
     def generate_pass_from_info(self, pass_info: Pass) -> Path:
         # Create a temporary directory to store the pass
         temp_dir = Path(tempfile.mkdtemp())
         # Copy the template files to the temporary directory
-        if not pass_info.userInfo or not pass_info.userInfo._template:
+        if not pass_info.userInfo or not pass_info.userInfo.get("_template"):
             raise ValueError(
                 "The pass template must be specified in the userInfo field"
             )
-        source = self._settings.get_template_path(pass_info.userInfo._template)
+        source = self._settings.get_template_path(pass_info.userInfo.get("_template"))
         target = Path(temp_dir) / "temp.pass"
         shutil.copytree(source, target)
         # Deploy the json data to the temporary directory
@@ -50,7 +53,7 @@ class PasskitService:
     ) -> Tuple[Pass, Path]:
         # Generate structure from the template
         my_pass = Pass.from_template(
-            model=template, extra_data=extra_data, settings=self._settings
+            template=template, extra_data=extra_data, settings=self._settings
         )
 
         # Create a temporary directory to store the pass
@@ -118,5 +121,5 @@ class PasskitService:
         self._settings = settings
 
     @classmethod
-    def get(cls, settings: Settings = get_settings()):
+    def get(cls, settings: Settings = get_settings()) -> PasskitService:
         return PasskitService(settings=settings)
